@@ -302,8 +302,8 @@ body.role-admin #logi-admin-account{display:flex!important}
 </div>
 
 <script>
-const SUPABASE_URL='https://ycjsqsrhttbclchyeuzz.supabase.co';
-const SUPABASE_ANON_KEY='sb_publishable_-avZEKSM1j7QOddKCxIb3g_F5emv6np';
+const SUPABASE_URL='https://ep-plain-bird-b6bansyw.apirest.c-2.sa-east-1.aws.neon.tech/neondb/rest/v1';
+const SUPABASE_ANON_KEY='';
 const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 
 function toast(msg,tipo){tipo=tipo||'ok';const el=document.createElement('div');el.className='fixed top-4 right-4 z-[999] px-4 py-3 rounded-xl shadow-2xl text-sm font-semibold border '+(tipo==='ok'?'bg-emerald-500/20 border-emerald-500/40 text-emerald-200':tipo==='warn'?'bg-yellow-500/20 border-yellow-500/40 text-yellow-200':'bg-red-500/20 border-red-500/40 text-red-200');el.textContent=msg;document.body.appendChild(el);setTimeout(function(){el.remove()},3500)}
