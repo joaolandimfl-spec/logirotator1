@@ -11,7 +11,7 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='120' fill='%23f59e0b'/><path d='M130 180 L60 256 L130 332 M382 180 L452 256 L382 332 M275 140 L235 372' stroke='%2309090b' stroke-width='48' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--primary:38 92% 50%;--primary-fg:222 47% 4%;--secondary:217 33% 17%;--border:217 33% 20%;--muted:217 33% 15%;--bg:222 47% 4%}
@@ -302,9 +302,83 @@ body.role-admin #logi-admin-account{display:flex!important}
 </div>
 
 <script>
-const SUPABASE_URL='https://ep-plain-bird-b6bansyw.apirest.c-2.sa-east-1.aws.neon.tech/neondb/rest/v1';
-const SUPABASE_ANON_KEY='';
-const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+// NOVA CONEXÃO: Neon PostgreSQL via Netlify Function (backend seguro).
+// O HTML nunca recebe DATABASE_URL, usuário ou senha do Neon.
+// A função de backend deve estar publicada em /.netlify/functions/api
+const LOGI_API_URL = '/.netlify/functions/api';
+
+function criarErroApi(mensagem, status) {
+  const e = new Error(mensagem || 'Falha na comunicação com a API Neon.');
+  e.status = status || 500;
+  return e;
+}
+async function requisicaoNeon(payload) {
+  let response;
+  try {
+    response = await fetch(LOGI_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch (e) {
+    throw criarErroApi('Não foi possível acessar a API do Neon. Publique também as Netlify Functions do projeto.', 0);
+  }
+  let body = {};
+  try { body = await response.json(); } catch (_) {}
+  if (!response.ok || body.error) throw criarErroApi(body.error || 'Erro HTTP ' + response.status, response.status);
+  return body;
+}
+
+// Adaptador compatível com as consultas .from(...).select/insert/update/upsert
+// usadas pelo HTML original. O backend valida tabelas e operações permitidas.
+class NeonQuery {
+  constructor(table) {
+    this.table = table; this.action = 'select'; this.columns = '*';
+    this.values = null; this.filters = []; this.orders = [];
+    this.limitValue = null; this.rangeValue = null; this.single = false;
+    this.conflict = null; this.returning = false; this.executed = false;
+  }
+  select(columns) { this.columns = columns || '*'; this.returning = true; return this; }
+  insert(values) { this.action = 'insert'; this.values = values; return this; }
+  update(values) { this.action = 'update'; this.values = values; return this; }
+  upsert(values, options) { this.action = 'upsert'; this.values = values; this.conflict = options && options.onConflict || null; return this; }
+  delete() { this.action = 'delete'; return this; }
+  eq(column, value) { this.filters.push({ op: 'eq', column, value }); return this; }
+  neq(column, value) { this.filters.push({ op: 'neq', column, value }); return this; }
+  is(column, value) { this.filters.push({ op: 'is', column, value }); return this; }
+  not(column, operator, value) { this.filters.push({ op: 'not', column, operator, value }); return this; }
+  in(column, values) { this.filters.push({ op: 'in', column, values }); return this; }
+  order(column, options) { this.orders.push({ column, ascending: !options || options.ascending !== false }); return this; }
+  limit(value) { this.limitValue = value; return this; }
+  range(from, to) { this.rangeValue = { from, to }; return this; }
+  maybeSingle() { this.single = true; return this; }
+  async execute() {
+    if (this.executed) return this.result;
+    this.executed = true;
+    try {
+      const body = await requisicaoNeon({
+        table: this.table, action: this.action, columns: this.columns,
+        values: this.values, filters: this.filters, orders: this.orders,
+        limit: this.limitValue, range: this.rangeValue,
+        conflict: this.conflict, returning: this.returning, single: this.single
+      });
+      let data = body.data === undefined ? null : body.data;
+      if (this.single && Array.isArray(data)) data = data[0] || null;
+      this.result = { data, error: null, count: body.count ?? null };
+    } catch (error) { this.result = { data: null, error, count: null }; }
+    return this.result;
+  }
+  then(resolve, reject) { return this.execute().then(resolve, reject); }
+}
+const supabaseClient = {
+  from(table) { return new NeonQuery(table); },
+  // A autenticação Supabase foi removida da conexão. O modo de teste do HTML
+  // continua disponível; autenticação real deverá ser implementada pela API Neon.
+  auth: {
+    async signOut() { return { error: null }; },
+    async signInWithPassword() { return { data: { session: null }, error: criarErroApi('Autenticação ainda não configurada na API Neon. Use o modo de teste.', 501) }; }
+  }
+};
 
 function toast(msg,tipo){tipo=tipo||'ok';const el=document.createElement('div');el.className='fixed top-4 right-4 z-[999] px-4 py-3 rounded-xl shadow-2xl text-sm font-semibold border '+(tipo==='ok'?'bg-emerald-500/20 border-emerald-500/40 text-emerald-200':tipo==='warn'?'bg-yellow-500/20 border-yellow-500/40 text-yellow-200':'bg-red-500/20 border-red-500/40 text-red-200');el.textContent=msg;document.body.appendChild(el);setTimeout(function(){el.remove()},3500)}
 
@@ -1271,7 +1345,8 @@ function imprimirRelatorio(){
   const w=window.open('','_blank','width=1100,height=800');
   if(!w){toast('O navegador bloqueou a janela de impressão.','warn');return;}
   w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Relatório LogiRotator</title>'+
-    '<style>body{font-family:Arial,sans-serif;padding:24px;color:#111}table{border-collapse:collapse;width:100%}th,td{border:1px solid #bbb;padding:6px;font-size:11px}th{background:#eee}div{box-sizing:border-box}</style></head><body>'+
+    '<style>body{font-family:Arial,sans-serif;padding:24px;color:#111}table{border-collapse:collapse;width:100%}th,td{border:1px solid #bbb;padding:6px;font-size:11px}th{background:#eee}div{box-sizing:border-box}</style></head><body>
+<div id="neon-api-notice" style="position:fixed;bottom:8px;right:8px;z-index:9999;background:#172554;color:#bfdbfe;border:1px solid #1d4ed8;border-radius:8px;padding:7px 10px;font:11px sans-serif;max-width:310px">Banco: Neon DB • API segura necessária em /.netlify/functions/api</div>'+
     '<h2>LogiRotator — Relatório '+nomeMesAtual+' / '+anoAtual+'</h2>'+area.innerHTML+'</body></html>');
   w.document.close();
   w.focus();
@@ -1888,14 +1963,14 @@ async function criarUsuarioLogi(ev){
  const btn=document.getElementById('new-user-submit'),msg=document.getElementById('logi-users-message');btn.disabled=true;msg.textContent='Criando conta...';
  try{
   const payload={nome:document.getElementById('new-user-name').value.trim(),email:document.getElementById('new-user-email').value.trim(),password:document.getElementById('new-user-password').value,papel:document.getElementById('new-user-role').value};
-  const response=await fetch(SUPABASE_URL+'/functions/v1/logirotator-create-user',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+sessaoLogi.access_token},body:JSON.stringify(payload)});
+  const response=await fetch(LOGI_API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'create_user',payload:payload})});
   const data=await response.json();if(!response.ok)throw new Error(data.error||'Não foi possível criar usuário.');
   msg.textContent='Usuário criado com sucesso.';document.getElementById('logi-create-user-form').reset();await carregarListaUsuarios();
  }catch(e){msg.textContent=e.message||String(e);}
  finally{btn.disabled=false;}
 }
 
-// Inicialização obrigatória: carrega colaboradores, presença e histórico do Supabase.
+// Inicialização obrigatória: carrega colaboradores, presença e histórico do Neon DB via API.
 // A versão anterior definia init(), mas não a executava; por isso o HTML permanecia com os KPIs em 0.
 const _appInicial=document.querySelector("body > .flex.min-h-screen");if(_appInicial)_appInicial.style.display="none";
 if (document.readyState === "loading") {
