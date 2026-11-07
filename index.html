@@ -11,7 +11,7 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='120' fill='%23f59e0b'/><path d='M130 180 L60 256 L130 332 M382 180 L452 256 L382 332 M275 140 L235 372' stroke='%2309090b' stroke-width='48' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--primary:38 92% 50%;--primary-fg:222 47% 4%;--secondary:217 33% 17%;--border:217 33% 20%;--muted:217 33% 15%;--bg:222 47% 4%}
@@ -66,7 +66,7 @@ body.role-admin #logi-admin-account{display:flex!important}
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased">
 
-<div id="logi-auth" class="hidden fixed inset-0 z-[200] bg-slate-950 flex items-center justify-center p-4">
+<div id="logi-auth" class="fixed inset-0 z-[200] bg-slate-950 flex items-center justify-center p-4">
  <form id="logi-login-form" class="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl" onsubmit="entrarLogi(event)">
   <div class="flex items-center gap-3 mb-5"><div class="bg-amber-500/10 p-3 rounded-xl text-amber-400"><i data-lucide="layers" class="w-6 h-6"></i></div><div><h1 class="text-xl font-extrabold text-amber-400">LogiRotator</h1><p class="text-xs text-slate-400">Acesso seguro • HUB-LCE-04</p></div></div>
   <label class="label block mb-1" for="logi-email">E-mail</label><input id="logi-email" class="input mb-3" type="email" autocomplete="username" required placeholder="seu@email.com">
@@ -105,7 +105,6 @@ body.role-admin #logi-admin-account{display:flex!important}
  </div>
 </div>
 
-<div id="logi-test-mode-banner" class="bg-amber-500 text-slate-950 text-center text-xs font-bold px-3 py-2">MODO DE TESTE — autenticação desativada temporariamente. Não publique esta versão em produção.</div>
 <div class="flex min-h-screen">
 
 <aside id="sidebar-desktop" class="hidden lg:flex lg:flex-col w-64 bg-slate-900/70 border-r border-slate-800 backdrop-blur-sm sticky top-0 h-screen">
@@ -302,9 +301,43 @@ body.role-admin #logi-admin-account{display:flex!important}
 </div>
 
 <script>
-const SUPABASE_URL='https://ycjsqsrhttbclchyeuzz.supabase.co';
-const SUPABASE_ANON_KEY='sb_publishable_-avZEKSM1j7QOddKCxIb3g_F5emv6np';
-const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+// Cliente compatível com a interface anterior, agora usando API Node.js + Neon.
+const API_BASE='/api';
+let apiToken=localStorage.getItem('logirotator_token')||'';
+class NeonQuery{
+ constructor(table){this.table=table;this.action='select';this.columns='*';this.payload=null;this.filters=[];this.orders=[];this.limitValue=null;this.rangeValue=null;this.conflict=null;this.returning=false;this.singleMode=null;}
+ select(columns='*'){this.columns=columns;this.returning=true;return this;}
+ insert(data){this.action='insert';this.payload=data;return this;}
+ upsert(data,opts={}){this.action='upsert';this.payload=data;this.conflict=opts.onConflict||null;return this;}
+ update(data){this.action='update';this.payload=data;return this;}
+ delete(){this.action='delete';return this;}
+ eq(c,v){this.filters.push({op:'eq',column:c,value:v});return this;}
+ neq(c,v){this.filters.push({op:'neq',column:c,value:v});return this;}
+ gte(c,v){this.filters.push({op:'gte',column:c,value:v});return this;}
+ lte(c,v){this.filters.push({op:'lte',column:c,value:v});return this;}
+ in(c,v){this.filters.push({op:'in',column:c,value:v});return this;}
+ is(c,v){this.filters.push({op:'is',column:c,value:v});return this;}
+ not(c,op,v){this.filters.push({op:'not',column:c,operator:op,value:v});return this;}
+ order(c,o={}){this.orders.push({column:c,ascending:o.ascending!==false});return this;}
+ limit(n){this.limitValue=n;return this;}
+ range(a,b){this.rangeValue=[a,b];return this;}
+ maybeSingle(){this.singleMode='maybe';return this;}
+ single(){this.singleMode='single';return this;}
+ then(resolve,reject){return this.run().then(resolve,reject);}
+ async run(){try{
+  const r=await fetch(API_BASE+'/db/'+encodeURIComponent(this.table),{method:'POST',headers:{'Content-Type':'application/json',...(apiToken?{Authorization:'Bearer '+apiToken}:{})},body:JSON.stringify({action:this.action,columns:this.columns,payload:this.payload,filters:this.filters,orders:this.orders,limit:this.limitValue,range:this.rangeValue,conflict:this.conflict,returning:this.returning})});
+  const body=await r.json();if(!r.ok)throw new Error(body.error||'Erro na API do Neon.');
+  let data=body.data??null;if(this.singleMode==='maybe'||this.singleMode==='single')data=Array.isArray(data)?(data[0]??null):data;
+  return {data,error:null,count:body.count??null};
+ }catch(error){return {data:null,error:{message:error.message||String(error)}};}}
+}
+const neonClient={from(table){return new NeonQuery(table);},auth:{
+ async signInWithPassword({email,password}){try{const r=await fetch(API_BASE+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Falha no login.');apiToken=d.token;localStorage.setItem('logirotator_token',apiToken);return {data:{session:{access_token:apiToken,user:d.user}},error:null};}catch(e){return {data:null,error:e};}},
+ async signOut(){apiToken='';localStorage.removeItem('logirotator_token');mostrarLogin('Sessão encerrada.');return {error:null};},
+ async getSession(){return {data:{session:apiToken?{access_token:apiToken,user:{}}:null},error:null};},
+ onAuthStateChange(){return {data:{subscription:{unsubscribe(){}}}};}
+}};
+
 
 function toast(msg,tipo){tipo=tipo||'ok';const el=document.createElement('div');el.className='fixed top-4 right-4 z-[999] px-4 py-3 rounded-xl shadow-2xl text-sm font-semibold border '+(tipo==='ok'?'bg-emerald-500/20 border-emerald-500/40 text-emerald-200':tipo==='warn'?'bg-yellow-500/20 border-yellow-500/40 text-yellow-200':'bg-red-500/20 border-red-500/40 text-red-200');el.textContent=msg;document.body.appendChild(el);setTimeout(function(){el.remove()},3500)}
 
@@ -421,11 +454,11 @@ function getDiaristasDia(){const raw=localStorage.getItem(obterChaveDiaristasDia
 function setDiaristasDia(o){
  const dados={pedidos:parseInt(o.pedidos,10)||0,presentes:parseInt(o.presentes,10)||0,faltantes:parseInt(o.faltantes,10)||0};
  localStorage.setItem(obterChaveDiaristasDia(),JSON.stringify(dados));
- if(papelLogi==='admin'&&supabaseClient){supabaseClient.from('logirotator_diaristas_diarios').upsert({data:opDataHojeISO(),pedidos:dados.pedidos,presentes:dados.presentes,faltantes:dados.faltantes,updated_by:sessaoLogi?.user?.id},{onConflict:'data'}).then(function(r){if(r.error)console.error('Falha ao sincronizar diaristas:',r.error.message);});}
+ if(papelLogi==='admin'&&neonClient){neonClient.from('logirotator_diaristas_diarios').upsert({data:opDataHojeISO(),pedidos:dados.pedidos,presentes:dados.presentes,faltantes:dados.faltantes,updated_by:sessaoLogi?.user?.id},{onConflict:'data'}).then(function(r){if(r.error)console.error('Falha ao sincronizar diaristas:',r.error.message);});}
 }
 function opDataHojeISO(){return anoAtual+'-'+String(mesAtualIndex+1).padStart(2,'0')+'-'+String(diaHoje).padStart(2,'0')}
 async function carregarDiaristasDiaBanco(){
- try{const r=await supabaseClient.from('logirotator_diaristas_diarios').select('pedidos,presentes,faltantes').eq('data',opDataHojeISO()).maybeSingle();if(r.error){console.warn('Tabela de diaristas ainda não configurada:',r.error.message);return;}if(r.data){localStorage.setItem(obterChaveDiaristasDia(),JSON.stringify({pedidos:r.data.pedidos||0,presentes:r.data.presentes||0,faltantes:r.data.faltantes||0}));}else if(papelLogi==='admin'){const atual=getDiaristasDia();await supabaseClient.from('logirotator_diaristas_diarios').upsert({data:opDataHojeISO(),pedidos:atual.pedidos,presentes:atual.presentes,faltantes:atual.faltantes,updated_by:sessaoLogi?.user?.id},{onConflict:'data'});}}
+ try{const r=await neonClient.from('logirotator_diaristas_diarios').select('pedidos,presentes,faltantes').eq('data',opDataHojeISO()).maybeSingle();if(r.error){console.warn('Tabela de diaristas ainda não configurada:',r.error.message);return;}if(r.data){localStorage.setItem(obterChaveDiaristasDia(),JSON.stringify({pedidos:r.data.pedidos||0,presentes:r.data.presentes||0,faltantes:r.data.faltantes||0}));}else if(papelLogi==='admin'){const atual=getDiaristasDia();await neonClient.from('logirotator_diaristas_diarios').upsert({data:opDataHojeISO(),pedidos:atual.pedidos,presentes:atual.presentes,faltantes:atual.faltantes,updated_by:sessaoLogi?.user?.id},{onConflict:'data'});}}
  catch(e){console.warn('Não foi possível carregar diaristas compartilhados:',e);}
 }
 function abrirModalDiaristasPedidos(){document.getElementById('input-diaristas-pedidos').value=getDiaristasDia().pedidos;document.getElementById('modal-diaristas-pedidos').classList.remove('hidden');lucide.createIcons();setTimeout(function(){document.getElementById('input-diaristas-pedidos').select()},100)}
@@ -488,43 +521,24 @@ function toggleSidebarMobile(){const s=document.getElementById('sidebar-mobile')
 function setFiltro(f){filtroAtivo=f;document.querySelectorAll('.sidebar-item').forEach(function(b){b.classList.remove('active')});const btn=document.getElementById('menu-'+f);if(btn)btn.classList.add('active');const labels={'todos':'Todos','presentes':'Presentes','operacao':'Em Opera\u00e7\u00e3o','diaristas':'Diaristas','dsr':'Em DSR Hoje','banco_horas':'Banco de Horas Hoje','faltas':'Faltas Hoje','atestados':'Atestados Hoje'};const icons={'todos':'layout-grid','presentes':'check-circle-2','operacao':'users','diaristas':'hard-hat','dsr':'palmtree','banco_horas':'clock-3','faltas':'alert-triangle','atestados':'stethoscope'};const el=document.getElementById('label-filtro-ativo');if(el)el.innerHTML='<i data-lucide="'+icons[f]+'" class="w-3.5 h-3.5"></i> '+labels[f];renderizar();lucide.createIcons()}
 
 async function init(){
-  // MODO DE TESTE: ignora autenticação e assume perfil administrativo apenas na interface.
-  // As permissões RLS do Supabase continuam ativas; este HTML não as desativa.
+  neonClient.auth.onAuthStateChange(function(event,session){
+    if(session)sessaoLogi=session;
+    if(event==='SIGNED_OUT'||!session){sessaoLogi=null;perfilLogi=null;papelLogi=null;mostrarLogin();}
+  });
   try{
-    sessaoLogi=null;
-    perfilLogi={nome:'Administrador (modo de teste)',email:'',papel:'admin',ativo:true};
-    papelLogi='admin';
-    modoAdmin=true;
-    document.getElementById('logi-auth')?.classList.add('hidden');
-    document.body.classList.remove('role-user');
-    document.body.classList.add('role-admin');
-    const app=document.querySelector('body > .flex.min-h-screen');
-    if(app)app.style.display='';
-    const txt='HUB-LCE-04 • '+nomeMesAtual+' / '+anoAtual+' (Dia '+diaHoje+')';
-    const a=document.getElementById('label-mes-ano');if(a)a.innerText=txt;
-    const b=document.getElementById('label-mes-ano-sidebar');if(b)b.innerText=txt;
-    popularSelectFuncoesPorSetor();
-    await carregarDadosSupabase();
-    await carregarDiaristasDiaBanco();
-    atualizarBotaoModoAdmin();
-    setFiltro('todos');
-    // Oculta gerenciamento de contas e botão de sair, pois não há sessão autenticada.
-    const conta=document.getElementById('logi-admin-account');
-    if(conta)conta.classList.add('hidden');
-    lucide.createIcons();
-  }catch(e){
-    console.error('Falha ao iniciar modo de teste:',e);
-    toast('Não foi possível carregar os dados. Verifique a conexão e as políticas RLS do Supabase.','erro');
-    const app=document.querySelector('body > .flex.min-h-screen');if(app)app.style.display='';
-  }
+    const {data,error}=await neonClient.auth.getSession();
+    if(error)throw error;
+    if(!data.session){mostrarLogin();return;}
+    await validarSessaoLogi(data.session);
+  }catch(e){console.error(e);mostrarLogin(e.message||'Não foi possível validar o acesso.');}
 }
 
 async function validarSessaoLogi(session){
   sessaoLogi=session;
-  const r=await supabaseClient.from('logirotator_perfis').select('user_id,nome,email,papel,ativo').eq('user_id',session.user.id).maybeSingle();
+  const r=await neonClient.from('logirotator_perfis').select('user_id,nome,email,papel,ativo').eq('user_id',session.user.id).maybeSingle();
   if(r.error)throw r.error;
   if(!r.data||r.data.ativo!==true||!['admin','usuario'].includes(r.data.papel)){
-    await supabaseClient.auth.signOut();mostrarLogin('Sua conta ainda não possui perfil ativo no LogiRotator.');return;
+    await neonClient.auth.signOut();mostrarLogin('Sua conta ainda não possui perfil ativo no LogiRotator.');return;
   }
   perfilLogi=r.data;papelLogi=r.data.papel;
   document.getElementById('logi-auth').classList.add('hidden');
@@ -534,7 +548,7 @@ async function validarSessaoLogi(session){
   const a=document.getElementById('label-mes-ano');if(a)a.innerText=txt;
   const b=document.getElementById('label-mes-ano-sidebar');if(b)b.innerText=txt;
   popularSelectFuncoesPorSetor();
-  await carregarDadosSupabase();
+  await carregarDadosNeon();
   await carregarDiaristasDiaBanco();
   if(papelLogi==='admin'){
     modoAdmin=true;atualizarBotaoModoAdmin();setFiltro('todos');montarBarraContaAdmin();
@@ -544,17 +558,17 @@ async function validarSessaoLogi(session){
   lucide.createIcons();
 }
 
-async function carregarDadosSupabase(){
+async function carregarDadosNeon(){
   try{
     // O cadastro mestre vem EXCLUSIVAMENTE de colaboradores.
     // Nunca agrupamos por nome e nunca substituímos a lista por dados do Excel.
-    const rc=await supabaseClient.from('colaboradores').select('*').order('nome');
+    const rc=await neonClient.from('colaboradores').select('*').order('nome');
     if(rc.error)throw rc.error;
 
-    // Total real do cadastro mestre no Supabase.
+    // Total real do cadastro mestre no Neon.
     totalCadastroBanco=(rc.data||[]).length;
 
-    // O Supabase/PostgREST pode limitar cada resposta a 1000 linhas. Um mês com
+    // O Neon/PostgREST pode limitar cada resposta a 1000 linhas. Um mês com
     // 70 colaboradores pode ter mais de 2000 presenças, então carregamos o mês
     // selecionado em páginas até não haver mais registros.
     const inicioMes=anoAtual+'-'+String(mesAtualIndex+1).padStart(2,'0')+'-01';
@@ -565,7 +579,7 @@ async function carregarDadosSupabase(){
       const tamanhoPagina=1000;
       let inicio=0;
       while(true){
-        const rp=await supabaseClient
+        const rp=await neonClient
           .from('presenca_diaria')
           .select('*')
           .gte('data',inicioMes)
@@ -613,7 +627,7 @@ async function carregarDadosSupabase(){
       const tamanhoPagina=1000;
       let inicio=0;
       while(true){
-        const rh=await supabaseClient.from('historico_escala').select('*').range(inicio,inicio+tamanhoPagina-1);
+        const rh=await neonClient.from('historico_escala').select('*').range(inicio,inicio+tamanhoPagina-1);
         if(rh.error){console.warn('LogiRotator: histórico de escala não carregado',rh.error);break;}
         const parte=rh.data||[];
         todos.push.apply(todos,parte);
@@ -768,13 +782,13 @@ async function tentarAlterarDia(idColab,indexDia,el){
       const st=contarDiasNaFuncaoAtual(colab.historicoDias);
       if(st.dias>=LIMITE_DIAS_FUNCAO&&nf===st.funcao){toast('Limite de '+LIMITE_DIAS_FUNCAO+' dias.','warn');renderizarMatriz();return;}
     }
-    await atualizarDiaSupabase(idColab,numDia,nf);
+    await atualizarDiaNeon(idColab,numDia,nf);
     colab.historicoDias[indexDia]=nf;
     renderizarMatriz();
   }catch(e){console.error(e);toast('Erro: '+(e.message||e),'erro');renderizarMatriz();}
 }
 
-async function atualizarDiaSupabase(colabId,dia,funcao){
+async function atualizarDiaNeon(colabId,dia,funcao){
   if(String(colabId||'').startsWith('excel-')){
     throw new Error('Este colaborador existe somente no Excel e ainda não possui vínculo com o cadastro do banco.');
   }
@@ -792,7 +806,7 @@ async function atualizarDiaSupabase(colabId,dia,funcao){
     if(SETORES_E_FUNCOES[s].includes(funcao)){setor=s;break}
   }
 
-  const existente=await supabaseClient
+  const existente=await neonClient
     .from('historico_escala')
     .select('id')
     .eq('colaborador_id',colabId)
@@ -804,11 +818,11 @@ async function atualizarDiaSupabase(colabId,dia,funcao){
 
   let r;
   if(existente.data && existente.data.length){
-    r=await supabaseClient.from('historico_escala')
+    r=await neonClient.from('historico_escala')
       .update({data_fim:dataStr,setor:setor,funcao:funcao})
       .eq('id',existente.data[0].id);
   }else{
-    r=await supabaseClient.from('historico_escala').insert([{
+    r=await neonClient.from('historico_escala').insert([{
       colaborador_id:colabId,
       data_inicio:dataStr,
       data_fim:dataStr,
@@ -1111,18 +1125,18 @@ async function registrarMovimentacaoSetorHoje(colabId,funcao){
   if(isStatusEspecial(funcao))throw new Error('A presença não pode ser alterada pela movimentação de setor.');
   const dataStr=String(anoAtual)+'-'+String(mesAtualIndex+1).padStart(2,'0')+'-'+String(diaHoje).padStart(2,'0');
   const agora=opAgora();
-  const q=await supabaseClient.from('historico_escala').select('*').eq('colaborador_id',colabId).eq('data_inicio',dataStr).not('hora_inicio','is',null).is('hora_fim',null).order('hora_inicio',{ascending:false}).limit(1);
+  const q=await neonClient.from('historico_escala').select('*').eq('colaborador_id',colabId).eq('data_inicio',dataStr).not('hora_inicio','is',null).is('hora_fim',null).order('hora_inicio',{ascending:false}).limit(1);
   if(q.error)throw q.error;
   const aberto=(q.data||[])[0];
   if(aberto&&String(aberto.funcao||'')===String(funcao))return agora;
-  if(aberto){const fecha=await supabaseClient.from('historico_escala').update({hora_fim:agora,data_fim:dataStr}).eq('id',aberto.id);if(fecha.error)throw fecha.error;}
-  const novo=await supabaseClient.from('historico_escala').insert([{colaborador_id:colabId,data_inicio:dataStr,data_fim:dataStr,setor:setorDaFuncao(funcao),funcao:funcao,hora_inicio:agora,hora_fim:null}]);
+  if(aberto){const fecha=await neonClient.from('historico_escala').update({hora_fim:agora,data_fim:dataStr}).eq('id',aberto.id);if(fecha.error)throw fecha.error;}
+  const novo=await neonClient.from('historico_escala').insert([{colaborador_id:colabId,data_inicio:dataStr,data_fim:dataStr,setor:setorDaFuncao(funcao),funcao:funcao,hora_inicio:agora,hora_fim:null}]);
   if(novo.error)throw novo.error;
   return agora;
 }
 async function recarregarMovimentosCard(c){
   const dataStr=String(anoAtual)+'-'+String(mesAtualIndex+1).padStart(2,'0')+'-'+String(diaHoje).padStart(2,'0');
-  const r=await supabaseClient.from('historico_escala').select('*').eq('colaborador_id',c.id).eq('data_inicio',dataStr).not('hora_inicio','is',null).order('hora_inicio',{ascending:true});
+  const r=await neonClient.from('historico_escala').select('*').eq('colaborador_id',c.id).eq('data_inicio',dataStr).not('hora_inicio','is',null).order('hora_inicio',{ascending:true});
   if(r.error)throw r.error;c.movimentosDia=r.data||[];
 }
 
@@ -1192,7 +1206,7 @@ function filtrarColabsAlocar(){
 function selecionarColabAlocar(id){alocarColabSelecionadoId=id;filtrarColabsAlocar()}
 async function confirmarAlocacao(){const funcao=document.getElementById('alocar-funcao').value;if(!alocarColabSelecionadoId){toast("Selecione um.",'warn');return}const colab=colaboradores.find(function(c){return c.id===alocarColabSelecionadoId});if(!colab)return;const btn=document.querySelector('#modal-alocar button[onclick="confirmarAlocacao()"]');if(btn&&btn.disabled)return;if(btn)btn.disabled=true;try{const st=obterStatusHoje(colab);if(st!=='presente'){toast(colab.nome+' nao pode ser alocado neste status.','warn');return}const hora=await registrarMovimentacaoSetorHoje(colab.id,funcao);await recarregarMovimentosCard(colab);colab.historicoDias[diaHoje-1]=funcao;toast(colab.nome+' alocado em '+funcao+' às '+hora.slice(0,5)+'.','ok');fecharModalAlocar();renderizar()}catch(e){console.error(e);toast("Erro: "+(e.message||e),'erro')}finally{if(btn)btn.disabled=false}}
 
-async function salvarColaborador(){const btn=document.querySelector('#modal-add button[onclick="salvarColaborador()"]');if(btn&&btn.disabled)return;if(btn)btn.disabled=true;try{const idEdit=document.getElementById('edit-id').value;const nome=document.getElementById('input-nome-colab').value.trim();const func=document.getElementById('novo-funcao').value;if(!nome){toast("Insira o nome.",'warn');return}if(nome.length<3){toast("Nome curto.",'warn');return}const nn=normalizarTexto(nome);const dup=colaboradores.some(function(c){return normalizarTexto(c.nome)===nn&&c.id!==idEdit});if(dup){toast('Ja existe: '+nome,'warn');return}if(idEdit){const ru=await supabaseClient.from('colaboradores').update({nome:nome}).eq('id',idEdit);if(ru.error){toast("Erro: "+ru.error.message,'erro');return}const c=colaboradores.find(function(x){return x.id===idEdit});if(c&&!isColabEmDSRHoje(c))await atualizarDiaSupabase(idEdit,diaHoje,func);else if(c&&isColabEmDSRHoje(c)&&isStatusEspecial(func))await atualizarDiaSupabase(idEdit,diaHoje,func);toast(nome+' atualizado.','ok')}else{const esc=document.getElementById('select-escala').value;const dsr=document.getElementById('select-dsr').value;const hor=document.getElementById('input-horario').value;const ri=await supabaseClient.from('colaboradores').insert([{nome:nome,escala:esc,dsr:dsr,horario:'00:00 - 07:54'}]).select();if(ri.error){toast("Erro: "+ri.error.message,'erro');return}if(ri.data&&ri.data.length>0){const dh=new Date(anoAtual,mesAtualIndex,diaHoje);const hd=isDiaDSR(dsr,dh);if(!hd||isStatusEspecial(func))await atualizarDiaSupabase(ri.data[0].id,diaHoje,func);toast(nome+' adicionado.','ok')}}fecharModalAdd();await carregarDadosSupabase();renderizar()}catch(e){console.error(e);toast("Erro: "+(e.message||e),'erro')}finally{if(btn)btn.disabled=false}}
+async function salvarColaborador(){const btn=document.querySelector('#modal-add button[onclick="salvarColaborador()"]');if(btn&&btn.disabled)return;if(btn)btn.disabled=true;try{const idEdit=document.getElementById('edit-id').value;const nome=document.getElementById('input-nome-colab').value.trim();const func=document.getElementById('novo-funcao').value;if(!nome){toast("Insira o nome.",'warn');return}if(nome.length<3){toast("Nome curto.",'warn');return}const nn=normalizarTexto(nome);const dup=colaboradores.some(function(c){return normalizarTexto(c.nome)===nn&&c.id!==idEdit});if(dup){toast('Ja existe: '+nome,'warn');return}if(idEdit){const ru=await neonClient.from('colaboradores').update({nome:nome}).eq('id',idEdit);if(ru.error){toast("Erro: "+ru.error.message,'erro');return}const c=colaboradores.find(function(x){return x.id===idEdit});if(c&&!isColabEmDSRHoje(c))await atualizarDiaNeon(idEdit,diaHoje,func);else if(c&&isColabEmDSRHoje(c)&&isStatusEspecial(func))await atualizarDiaNeon(idEdit,diaHoje,func);toast(nome+' atualizado.','ok')}else{const esc=document.getElementById('select-escala').value;const dsr=document.getElementById('select-dsr').value;const hor=document.getElementById('input-horario').value;const ri=await neonClient.from('colaboradores').insert([{nome:nome,escala:esc,dsr:dsr,horario:'00:00 - 07:54'}]).select();if(ri.error){toast("Erro: "+ri.error.message,'erro');return}if(ri.data&&ri.data.length>0){const dh=new Date(anoAtual,mesAtualIndex,diaHoje);const hd=isDiaDSR(dsr,dh);if(!hd||isStatusEspecial(func))await atualizarDiaNeon(ri.data[0].id,diaHoje,func);toast(nome+' adicionado.','ok')}}fecharModalAdd();await carregarDadosNeon();renderizar()}catch(e){console.error(e);toast("Erro: "+(e.message||e),'erro')}finally{if(btn)btn.disabled=false}}
 
 function abrirHistorico(id){const c=colaboradores.find(function(x){return x.id===id});if(!c)return;document.getElementById('titulo-modal-hist').innerText='Editar: '+c.nome;const cont=document.getElementById('conteudo-historico-dias');cont.innerHTML='';let idxs=Array.from({length:totalDiasDoMes},function(_,i){return i});idxs.sort(function(a,b){return((a+1)===diaHoje?-1:(b+1)===diaHoje?1:0)});idxs.forEach(function(i){const f=c.historicoDias[i]||"-";const nd=i+1;const eH=nd===diaHoje;const eP=nd<diaHoje;const dD=new Date(anoAtual,mesAtualIndex,nd);const eD=isDiaDSR(c.dsr,dD);const bl=eP&&!modoAdmin;let op='';STATUS_ESPECIAIS.forEach(function(s){op+='<option value="'+s.valor+'" '+(s.valor===f?'selected':'')+'>'+s.label+'</option>'});for(const setor of Object.keys(SETORES_E_FUNCOES)){op+='<optgroup label="'+setor+'">';SETORES_E_FUNCOES[setor].forEach(function(x){op+='<option value="'+x+'" '+(x===f?'selected':'')+'>'+x+'</option>'});op+='</optgroup>'}cont.innerHTML+='<div class="flex items-center justify-between p-2.5 rounded-xl border '+(eH?'border-amber-500 bg-amber-500/10':eD?'border-orange-500/40 bg-orange-950/10':'border-slate-800 bg-slate-950')+' gap-2"><span class="text-[11px] font-bold '+(eH?'text-amber-300':eD?'text-orange-400':'text-slate-300')+' w-32">Dia '+nd+' '+(eH?'HOJE':eD?'DSR':eP?'trancado':'')+'</span><select disabled onchange="tentarAlterarDia(\''+id+'\', '+i+', this)" class="select flex-grow '+(bl?'opacity-50':'')+'">'+op+'</select></div>'});document.getElementById('modal-historico').classList.remove('hidden')}
 function fecharModalHistorico(){document.getElementById('modal-historico').classList.add('hidden')}
@@ -1452,7 +1466,7 @@ function aplicarSnapshotExcelHoje(){
       encontrado.origemExcelHoje = true;
       listaDia.push(encontrado);
     }else{
-      // Não cadastra no Supabase. Mantém somente na visão diária para que
+      // Não cadastra no Neon. Mantém somente na visão diária para que
       // os KPIs e a lista reflitam exatamente a planilha importada.
       const hd = new Array(totalDiasDoMes).fill('-');
       hd[diaHoje-1] = reg.status;
@@ -1695,7 +1709,7 @@ async function processarExcel(event){
       if(datas.length===0)throw new Error('Nenhuma data foi reconhecida na planilha.');
       toast('Aba '+sheetName+': '+datas.length+' datas reconhecidas. O Station ID será ignorado; será usado apenas o código individual.','ok');
 
-      const rc=await supabaseClient.from('colaboradores').select('*');
+      const rc=await neonClient.from('colaboradores').select('*');
       if(rc.error)throw new Error('Erro ao consultar colaboradores: '+rc.error.message);
       const banco=rc.data||[];
       if(!banco.length)throw new Error('A tabela colaboradores está vazia.');
@@ -1773,7 +1787,7 @@ async function processarExcel(event){
       const lote=400;
       let erroUpsert=null;
       for(let i=0;i<registros.length;i+=lote){
-        const r=await supabaseClient.from('presenca_diaria').upsert(registros.slice(i,i+lote),{onConflict:'colaborador_id,data'});
+        const r=await neonClient.from('presenca_diaria').upsert(registros.slice(i,i+lote),{onConflict:'colaborador_id,data'});
         if(r.error){erroUpsert=r.error;break;}
         gravados+=Math.min(lote,registros.length-i);
       }
@@ -1784,10 +1798,10 @@ async function processarExcel(event){
           for(let i=0;i<registros.length;i+=20){
             const grupo=registros.slice(i,i+20);
             const resultados=await Promise.all(grupo.map(async function(reg){
-              const q=await supabaseClient.from('presenca_diaria').select('id').eq('colaborador_id',reg.colaborador_id).eq('data',reg.data).limit(1);
+              const q=await neonClient.from('presenca_diaria').select('id').eq('colaborador_id',reg.colaborador_id).eq('data',reg.data).limit(1);
               if(q.error)throw q.error;
-              if(q.data&&q.data.length){const u=await supabaseClient.from('presenca_diaria').update({status:reg.status}).eq('id',q.data[0].id);if(u.error)throw u.error;}
-              else{const ins=await supabaseClient.from('presenca_diaria').insert([reg]);if(ins.error)throw ins.error;}
+              if(q.data&&q.data.length){const u=await neonClient.from('presenca_diaria').update({status:reg.status}).eq('id',q.data[0].id);if(u.error)throw u.error;}
+              else{const ins=await neonClient.from('presenca_diaria').insert([reg]);if(ins.error)throw ins.error;}
               return 1;
             }));
             gravados+=resultados.reduce((a,b)=>a+b,0);
@@ -1802,13 +1816,13 @@ async function processarExcel(event){
       let confirmados=0;
       for(let i=0;i<datasImportadas.length;i+=20){
         const ds=datasImportadas.slice(i,i+20);
-        const q=await supabaseClient.from('presenca_diaria').select('colaborador_id,data,status').in('data',ds);
+        const q=await neonClient.from('presenca_diaria').select('colaborador_id,data,status').in('data',ds);
         if(q.error)throw new Error('A gravação foi enviada, mas a conferência falhou: '+q.error.message);
         confirmados+=(q.data||[]).filter(x=>registrosMap.has(String(x.colaborador_id)+'|'+String(x.data).slice(0,10))).length;
       }
-      if(confirmados===0)throw new Error('O Supabase não retornou nenhum registro na conferência após a gravação. Verifique as permissões de INSERT/UPDATE e a política RLS de presenca_diaria.');
+      if(confirmados===0)throw new Error('O Neon não retornou nenhum registro na conferência após a gravação. Verifique as permissões da conta no LogiRotator e a estrutura da tabela presenca_diaria no Neon.');
 
-      await carregarDadosSupabase();
+      await carregarDadosNeon();
       atualizarKPIs();
       renderizar();
       const contagem={};registros.forEach(r=>contagem[r.status]=(contagem[r.status]||0)+1);
@@ -1838,11 +1852,11 @@ function mostrarLogin(msg){
 }
 async function entrarLogi(ev){
  ev.preventDefault();const btn=document.getElementById('logi-login-submit');const err=document.getElementById('logi-login-error');btn.disabled=true;btn.textContent='Validando...';err.textContent='';
- try{const email=document.getElementById('logi-email').value.trim();const password=document.getElementById('logi-password').value;const r=await supabaseClient.auth.signInWithPassword({email,password});if(r.error)throw r.error;await validarSessaoLogi(r.data.session);}
+ try{const email=document.getElementById('logi-email').value.trim();const password=document.getElementById('logi-password').value;const r=await neonClient.auth.signInWithPassword({email,password});if(r.error)throw r.error;await validarSessaoLogi(r.data.session);}
  catch(e){err.textContent=e.message||'Falha no login.';}
  finally{btn.disabled=false;btn.textContent='Entrar';}
 }
-async function sairLogi(){await supabaseClient.auth.signOut();}
+async function sairLogi(){await neonClient.auth.signOut();}
 function montarBarraContaAdmin(){
  const el=document.getElementById('logi-admin-account');if(el)el.classList.remove('hidden');
  const n=document.getElementById('logi-admin-name');if(n)n.textContent=(perfilLogi?.nome||perfilLogi?.email||'Administrador')+' • Administrador';
@@ -1879,7 +1893,7 @@ function abrirGestaoUsuarios(){if(papelLogi!=='admin')return;document.getElement
 function fecharGestaoUsuarios(){document.getElementById('logi-users-modal').classList.add('hidden');}
 async function carregarListaUsuarios(){
  const box=document.getElementById('logi-users-list');box.innerHTML='<p class="text-xs text-slate-400">Carregando...</p>';
- const r=await supabaseClient.from('logirotator_perfis').select('user_id,nome,email,papel,ativo').order('nome');
+ const r=await neonClient.from('logirotator_perfis').select('user_id,nome,email,papel,ativo').order('nome');
  if(r.error){box.textContent=r.error.message;return;}
  box.innerHTML=(r.data||[]).map(function(u){return '<div class="flex items-center justify-between gap-3 bg-slate-950 border border-slate-800 rounded-lg p-3"><div><div class="text-sm font-semibold">'+escaparHtml(u.nome||'')+'</div><div class="text-xs text-slate-400">'+escaparHtml(u.email||'')+' • '+escaparHtml(u.papel)+'</div></div><span class="badge '+(u.ativo?'badge-success':'badge-default')+'">'+(u.ativo?'Ativo':'Inativo')+'</span></div>';}).join('')||'<p class="text-xs text-slate-400">Nenhum usuário cadastrado.</p>';
 }
@@ -1888,14 +1902,14 @@ async function criarUsuarioLogi(ev){
  const btn=document.getElementById('new-user-submit'),msg=document.getElementById('logi-users-message');btn.disabled=true;msg.textContent='Criando conta...';
  try{
   const payload={nome:document.getElementById('new-user-name').value.trim(),email:document.getElementById('new-user-email').value.trim(),password:document.getElementById('new-user-password').value,papel:document.getElementById('new-user-role').value};
-  const response=await fetch(SUPABASE_URL+'/functions/v1/logirotator-create-user',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+sessaoLogi.access_token},body:JSON.stringify(payload)});
+  const response=await fetch('/api/auth/users',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiToken},body:JSON.stringify(payload)});
   const data=await response.json();if(!response.ok)throw new Error(data.error||'Não foi possível criar usuário.');
   msg.textContent='Usuário criado com sucesso.';document.getElementById('logi-create-user-form').reset();await carregarListaUsuarios();
  }catch(e){msg.textContent=e.message||String(e);}
  finally{btn.disabled=false;}
 }
 
-// Inicialização obrigatória: carrega colaboradores, presença e histórico do Supabase.
+// Inicialização obrigatória: carrega colaboradores, presença e histórico do Neon.
 // A versão anterior definia init(), mas não a executava; por isso o HTML permanecia com os KPIs em 0.
 const _appInicial=document.querySelector("body > .flex.min-h-screen");if(_appInicial)_appInicial.style.display="none";
 if (document.readyState === "loading") {
@@ -1910,11 +1924,11 @@ function opMin(h){if(!h)return null;const p=String(h).slice(0,5).split(":");retu
 function setorDaFuncao(f){for(const s of Object.keys(SETORES_E_FUNCOES)){if(SETORES_E_FUNCOES[s].includes(f))return s}return"Recebimento"}
 function preencherFuncoesOperacao(){const s=document.getElementById("op-funcao");s.innerHTML="";for(const setor of Object.keys(SETORES_E_FUNCOES)){const g=document.createElement("optgroup");g.label=setor;SETORES_E_FUNCOES[setor].forEach(f=>{const o=document.createElement("option");o.value=f;o.textContent=f;g.appendChild(o)});s.appendChild(g)}}
 function opColabSelecionado(){return colaboradores.find(c=>c.id===document.getElementById("op-colaborador").value)}
-async function buscarMovimentosOperacao(){const c=opColabSelecionado(),d=document.getElementById("op-data").value,b=document.getElementById("op-historico");if(!c||!d)return;b.innerHTML="Carregando...";const r=await supabaseClient.from("historico_escala").select("*").eq("colaborador_id",c.id).eq("data_inicio",d).order("hora_inicio",{ascending:true});if(r.error){b.innerHTML=r.error.message;return}const rows=r.data||[];b.innerHTML=rows.length?rows.map(x=>'<div class="rounded-lg border border-slate-800 bg-slate-900 p-2"><b>'+String(x.funcao||"-")+'</b> <span class="text-cyan-300">'+String(x.hora_inicio||"--:--").slice(0,5)+" → "+(x.hora_fim?String(x.hora_fim).slice(0,5):"Em aberto")+"</span></div>").join(""):'<span class="text-slate-600">Nenhuma movimentação.</span>';const aberto=rows.find(x=>!x.hora_fim);document.getElementById("op-btn-entrada").disabled=!!aberto;document.getElementById("op-btn-troca").disabled=!aberto;document.getElementById("op-btn-saida").disabled=!aberto}
+async function buscarMovimentosOperacao(){const c=opColabSelecionado(),d=document.getElementById("op-data").value,b=document.getElementById("op-historico");if(!c||!d)return;b.innerHTML="Carregando...";const r=await neonClient.from("historico_escala").select("*").eq("colaborador_id",c.id).eq("data_inicio",d).order("hora_inicio",{ascending:true});if(r.error){b.innerHTML=r.error.message;return}const rows=r.data||[];b.innerHTML=rows.length?rows.map(x=>'<div class="rounded-lg border border-slate-800 bg-slate-900 p-2"><b>'+String(x.funcao||"-")+'</b> <span class="text-cyan-300">'+String(x.hora_inicio||"--:--").slice(0,5)+" → "+(x.hora_fim?String(x.hora_fim).slice(0,5):"Em aberto")+"</span></div>").join(""):'<span class="text-slate-600">Nenhuma movimentação.</span>';const aberto=rows.find(x=>!x.hora_fim);document.getElementById("op-btn-entrada").disabled=!!aberto;document.getElementById("op-btn-troca").disabled=!aberto;document.getElementById("op-btn-saida").disabled=!aberto}
 function opAtualizar(){const c=opColabSelecionado();document.getElementById("op-status").textContent=c?c.nome:"Selecione um colaborador.";buscarMovimentosOperacao()}
-async function registrarEntradaOperacao(){const c=opColabSelecionado(),d=document.getElementById("op-data").value,f=document.getElementById("op-funcao").value;if(!c||!f)return toast("Selecione colaborador e função.","warn");if(d!==opHojeISO())return toast("A entrada deve ser registrada no dia atual.","warn");const agora=opAgora();if(opMin(agora)>474)return toast("Entrada permitida somente até 07:54.","warn");const q=await supabaseClient.from("historico_escala").select("id").eq("colaborador_id",c.id).eq("data_inicio",d).is("hora_fim",null).limit(1);if(q.error)return toast(q.error.message,"erro");if(q.data?.length)return toast("Já existe uma operação em aberto.","warn");const r=await supabaseClient.from("historico_escala").insert([{colaborador_id:c.id,data_inicio:d,data_fim:d,setor:setorDaFuncao(f),funcao:f,hora_inicio:agora,hora_fim:null}]);if(r.error)return toast(r.error.message,"erro");toast("Entrada registrada às "+agora.slice(0,5)+".","ok");buscarMovimentosOperacao()}
-async function trocarFuncaoOperacao(){const c=opColabSelecionado(),d=document.getElementById("op-data").value,f=document.getElementById("op-funcao").value;if(!c||!f)return;const q=await supabaseClient.from("historico_escala").select("*").eq("colaborador_id",c.id).eq("data_inicio",d).is("hora_fim",null).order("hora_inicio",{ascending:false}).limit(1);if(q.error||!q.data?.length)return toast(q.error?.message||"Não há operação aberta.","warn");const atual=q.data[0],agora=opAgora();if(String(atual.funcao)===f)return toast("A função já é a atual.","warn");let r=await supabaseClient.from("historico_escala").update({hora_fim:agora,data_fim:d}).eq("id",atual.id);if(r.error)return toast(r.error.message,"erro");r=await supabaseClient.from("historico_escala").insert([{colaborador_id:c.id,data_inicio:d,data_fim:d,setor:setorDaFuncao(f),funcao:f,hora_inicio:agora,hora_fim:null}]);if(r.error)return toast(r.error.message,"erro");toast("Função alterada às "+agora.slice(0,5)+".","ok");buscarMovimentosOperacao()}
-async function registrarSaidaOperacao(){const c=opColabSelecionado(),d=document.getElementById("op-data").value;if(!c)return;const q=await supabaseClient.from("historico_escala").select("id").eq("colaborador_id",c.id).eq("data_inicio",d).is("hora_fim",null).order("hora_inicio",{ascending:false}).limit(1);if(q.error||!q.data?.length)return toast(q.error?.message||"Não há operação aberta.","warn");const agora=opAgora(),r=await supabaseClient.from("historico_escala").update({hora_fim:agora,data_fim:d}).eq("id",q.data[0].id);if(r.error)return toast(r.error.message,"erro");toast("Saída registrada às "+agora.slice(0,5)+".","ok");buscarMovimentosOperacao()}
+async function registrarEntradaOperacao(){const c=opColabSelecionado(),d=document.getElementById("op-data").value,f=document.getElementById("op-funcao").value;if(!c||!f)return toast("Selecione colaborador e função.","warn");if(d!==opHojeISO())return toast("A entrada deve ser registrada no dia atual.","warn");const agora=opAgora();if(opMin(agora)>474)return toast("Entrada permitida somente até 07:54.","warn");const q=await neonClient.from("historico_escala").select("id").eq("colaborador_id",c.id).eq("data_inicio",d).is("hora_fim",null).limit(1);if(q.error)return toast(q.error.message,"erro");if(q.data?.length)return toast("Já existe uma operação em aberto.","warn");const r=await neonClient.from("historico_escala").insert([{colaborador_id:c.id,data_inicio:d,data_fim:d,setor:setorDaFuncao(f),funcao:f,hora_inicio:agora,hora_fim:null}]);if(r.error)return toast(r.error.message,"erro");toast("Entrada registrada às "+agora.slice(0,5)+".","ok");buscarMovimentosOperacao()}
+async function trocarFuncaoOperacao(){const c=opColabSelecionado(),d=document.getElementById("op-data").value,f=document.getElementById("op-funcao").value;if(!c||!f)return;const q=await neonClient.from("historico_escala").select("*").eq("colaborador_id",c.id).eq("data_inicio",d).is("hora_fim",null).order("hora_inicio",{ascending:false}).limit(1);if(q.error||!q.data?.length)return toast(q.error?.message||"Não há operação aberta.","warn");const atual=q.data[0],agora=opAgora();if(String(atual.funcao)===f)return toast("A função já é a atual.","warn");let r=await neonClient.from("historico_escala").update({hora_fim:agora,data_fim:d}).eq("id",atual.id);if(r.error)return toast(r.error.message,"erro");r=await neonClient.from("historico_escala").insert([{colaborador_id:c.id,data_inicio:d,data_fim:d,setor:setorDaFuncao(f),funcao:f,hora_inicio:agora,hora_fim:null}]);if(r.error)return toast(r.error.message,"erro");toast("Função alterada às "+agora.slice(0,5)+".","ok");buscarMovimentosOperacao()}
+async function registrarSaidaOperacao(){const c=opColabSelecionado(),d=document.getElementById("op-data").value;if(!c)return;const q=await neonClient.from("historico_escala").select("id").eq("colaborador_id",c.id).eq("data_inicio",d).is("hora_fim",null).order("hora_inicio",{ascending:false}).limit(1);if(q.error||!q.data?.length)return toast(q.error?.message||"Não há operação aberta.","warn");const agora=opAgora(),r=await neonClient.from("historico_escala").update({hora_fim:agora,data_fim:d}).eq("id",q.data[0].id);if(r.error)return toast(r.error.message,"erro");toast("Saída registrada às "+agora.slice(0,5)+".","ok");buscarMovimentosOperacao()}
 function abrirPainelOperacao(){const m=document.getElementById("modal-operacao"),s=document.getElementById("op-colaborador");s.innerHTML='<option value="">Selecione...</option>'+colaboradores.map(c=>'<option value="'+c.id+'">'+c.nome+"</option>").join("");document.getElementById("op-data").value=opHojeISO();preencherFuncoesOperacao();m.classList.remove("hidden");m.classList.add("flex");s.onchange=opAtualizar;document.getElementById("op-data").onchange=buscarMovimentosOperacao;opAtualizar()}
 function fecharPainelOperacao(){const m=document.getElementById("modal-operacao");m.classList.add("hidden");m.classList.remove("flex")}
 
