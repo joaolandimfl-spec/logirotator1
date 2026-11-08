@@ -11,8 +11,6 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='120' fill='%23f59e0b'/><path d='M130 180 L60 256 L130 332 M382 180 L452 256 L382 332 M275 140 L235 372' stroke='%2309090b' stroke-width='48' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--primary:38 92% 50%;--primary-fg:222 47% 4%;--secondary:217 33% 17%;--border:217 33% 20%;--muted:217 33% 15%;--bg:222 47% 4%}
 *{box-sizing:border-box}
@@ -123,15 +121,12 @@ body.role-admin #logi-admin-account{display:flex!important}
 <button onclick="setFiltro('faltas')" id="menu-faltas" class="sidebar-item"><span class="flex items-center gap-2"><i data-lucide="alert-triangle" class="w-4 h-4 text-yellow-400"></i> Faltas Hoje</span><span id="badge-faltas" class="badge badge-default">0</span></button>
 <button onclick="setFiltro('atestados')" id="menu-atestados" class="sidebar-item"><span class="flex items-center gap-2"><i data-lucide="stethoscope" class="w-4 h-4 text-red-400"></i> Atestados Hoje</span><span id="badge-atestados" class="badge badge-default">0</span></button>
 <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 px-3 pt-4 pb-1">A&#231;&#245;es</p>
-<button onclick="document.getElementById('input-excel').click()" class="sidebar-item text-blue-400"><span class="flex items-center gap-2"><i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Importar Excel</span><span class="badge badge-info">Sync</span></button>
 <button onclick="abrirModalDiaristasPedidos()" class="sidebar-item text-cyan-400"><span class="flex items-center gap-2"><i data-lucide="clipboard-list" class="w-4 h-4"></i> Diaristas Pedidos</span></button>
 <button onclick="abrirModalMatriz()" class="sidebar-item"><span class="flex items-center gap-2"><i data-lucide="grid" class="w-4 h-4 text-amber-400"></i> Grade Mensal</span></button>
 <button onclick="abrirRelatorioAcumulado()" class="sidebar-item"><span class="flex items-center gap-2"><i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-400"></i> Relat&#243;rio</span></button><button onclick="abrirRastreioMensal()" class="sidebar-item text-cyan-300"><span class="flex items-center gap-2"><i data-lucide="map-pin" class="w-4 h-4"></i> Rastreio Mensal</span></button><button onclick="abrirPainelOperacao()" class="sidebar-item text-amber-400"><span class="flex items-center gap-2"><i data-lucide="timer" class="w-4 h-4"></i> Opera&#231;&#227;o / Movimenta&#231;&#227;o</span></button>
 </nav>
 <div class="p-3 border-t border-slate-800 text-[10px] text-slate-500"><p id="label-mes-ano-sidebar">&mdash;</p></div>
 </aside>
-
-<input type="file" id="input-excel" accept=".xlsx, .xls" class="hidden" onchange="processarExcel(event)">
 
 <main class="flex-1 min-w-0">
 <div id="app" class="max-w-md md:max-w-6xl mx-auto p-3 sm:p-6 pb-12">
@@ -186,7 +181,6 @@ body.role-admin #logi-admin-account{display:flex!important}
 <button onclick="setFiltro('faltas');toggleSidebarMobile()" class="sidebar-item"><span class="flex items-center gap-2"><i data-lucide="alert-triangle" class="w-4 h-4 text-yellow-400"></i> Faltas Hoje</span><span id="badge-faltas-m" class="badge badge-default">0</span></button>
 <button onclick="setFiltro('atestados');toggleSidebarMobile()" class="sidebar-item"><span class="flex items-center gap-2"><i data-lucide="stethoscope" class="w-4 h-4 text-red-400"></i> Atestados Hoje</span><span id="badge-atestados-m" class="badge badge-default">0</span></button>
 <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 px-3 pt-4 pb-1">A&#231;&#245;es</p>
-<button onclick="document.getElementById('input-excel').click();toggleSidebarMobile()" class="sidebar-item text-blue-400"><span class="flex items-center gap-2"><i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Importar Excel</span><span class="badge badge-info">Sync</span></button>
 <button onclick="abrirModalDiaristasPedidos();toggleSidebarMobile()" class="sidebar-item text-cyan-400"><span class="flex items-center gap-2"><i data-lucide="clipboard-list" class="w-4 h-4"></i> Diaristas Pedidos</span></button>
 <button onclick="abrirModalMatriz();toggleSidebarMobile()" class="sidebar-item"><span class="flex items-center gap-2"><i data-lucide="grid" class="w-4 h-4 text-amber-400"></i> Grade Mensal</span></button>
 <button onclick="abrirRelatorioAcumulado();toggleSidebarMobile()" class="sidebar-item"><span class="flex items-center gap-2"><i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-400"></i> Relat&#243;rio</span></button><button onclick="abrirRastreioMensal();toggleSidebarMobile()" class="sidebar-item text-cyan-300"><span class="flex items-center gap-2"><i data-lucide="map-pin" class="w-4 h-4"></i> Rastreio Mensal</span></button><button onclick="abrirPainelOperacao();toggleSidebarMobile()" class="sidebar-item text-amber-400"><span class="flex items-center gap-2"><i data-lucide="timer" class="w-4 h-4"></i> Opera&#231;&#227;o / Movimenta&#231;&#227;o</span></button>
@@ -290,17 +284,6 @@ body.role-admin #logi-admin-account{display:flex!important}
 </div>
 </div>
 
-<div id="modal-resultado-import" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4">
-<div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-5 shadow-2xl">
-<div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-800">
-<h3 class="text-base font-bold text-emerald-400 flex items-center gap-2"><i data-lucide="check-circle-2" class="w-5 h-5"></i> Resultado da Importa&#231;&#227;o</h3>
-<button onclick="fecharModalResultadoImport()" class="btn btn-ghost btn-icon-sm"><i data-lucide="x" class="w-4 h-4"></i></button>
-</div>
-<div id="resultado-import-conteudo" class="space-y-3"></div>
-<div class="flex justify-end pt-3 border-t border-slate-800 mt-4"><button onclick="fecharModalResultadoImport()" class="btn btn-primary">OK</button></div>
-</div>
-</div>
-
 <script>
 // NOVA CONEXÃO: Neon PostgreSQL via Netlify Function (backend seguro).
 // O HTML nunca recebe DATABASE_URL, usuário ou senha do Neon.
@@ -401,7 +384,7 @@ const SETORES_E_FUNCOES={
 };
 
 const STATUS_ESPECIAIS=[
-{valor:"-",label:"- (Sem informação no Excel)"},
+{valor:"-",label:"- (Sem informação cadastrada)"},
 {valor:"P",label:"P: Presente"},{valor:"AF",label:"AF: Afastamento"},{valor:"AL",label:"AL: Afastamento longo"},
 {valor:"AM",label:"AM: Atestado médico"},{valor:"BH",label:"BH: Banco de Horas"},{valor:"DF",label:"DF: Desligamento forçado"},
 {valor:"DP",label:"DP: Desligamento Programado"},{valor:"DSR",label:"DSR: Descanso Semanal Remunerado"},{valor:"DV",label:"DV: Desligamento voluntário"},
@@ -958,7 +941,7 @@ function criarListaPresentes(colsOperacao) {
     h += '<div class="bg-slate-900 border border-emerald-500/30 rounded-xl p-3 flex items-center justify-between gap-2">';
     h += '<div class="min-w-0 flex-1"><div class="text-xs font-bold text-slate-100 truncate">' + c.nome + '</div>';
     h += '<div class="text-[10px] text-slate-400 truncate">' + c.escala + ' \u00b7 DSR: ' + c.dsr + '</div>';
-    h += '<div class="text-[10px] ' + (alocadoSetor ? 'text-amber-400' : 'text-slate-500') + ' font-semibold mt-0.5">Fun\u00e7\u00e3o: <strong>' + (alocadoSetor ? funcao : 'Sem setor (Excel)') + '</strong></div></div>';
+    h += '<div class="text-[10px] ' + (alocadoSetor ? 'text-amber-400' : 'text-slate-500') + ' font-semibold mt-0.5">Fun\u00e7\u00e3o: <strong>' + (alocadoSetor ? funcao : 'Sem setor') + '</strong></div></div>';
     
     if (alocadoSetor) {
       h += '<span class="badge badge-success shrink-0">Escalado</span>';
@@ -1139,7 +1122,7 @@ if(filtroAtivo==='dsr'){
   return;
 }
 if(filtroAtivo==='banco_horas'){
-  if(bhF.length>0){const b=criarBloco('Banco de Horas Hoje','status BH do Excel',bhF,'purple','<i data-lucide="clock-3" class="w-4 h-4"></i>',bhF.length);if(b)cont.appendChild(b);}
+  if(bhF.length>0){const b=criarBloco('Banco de Horas Hoje','status BH',bhF,'purple','<i data-lucide="clock-3" class="w-4 h-4"></i>',bhF.length);if(b)cont.appendChild(b);}
   else cont.innerHTML='<div class="text-center text-slate-500 py-10">Nenhum colaborador em Banco de Horas (BH) hoje.</div>';
   lucide.createIcons();return;
 }
@@ -1345,8 +1328,8 @@ function imprimirRelatorio(){
   const w=window.open('','_blank','width=1100,height=800');
   if(!w){toast('O navegador bloqueou a janela de impressão.','warn');return;}
   w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Relatório LogiRotator</title>'+
-    '<style>body{font-family:Arial,sans-serif;padding:24px;color:#111}table{border-collapse:collapse;width:100%}th,td{border:1px solid #bbb;padding:6px;font-size:11px}th{background:#eee}div{box-sizing:border-box}</style></head><body>
-<div id="neon-api-notice" style="position:fixed;bottom:8px;right:8px;z-index:9999;background:#172554;color:#bfdbfe;border:1px solid #1d4ed8;border-radius:8px;padding:7px 10px;font:11px sans-serif;max-width:310px">Banco: Neon DB • API segura necessária em /.netlify/functions/api</div>'+
+    '<style>body{font-family:Arial,sans-serif;padding:24px;color:#111}table{border-collapse:collapse;width:100%}th,td{border:1px solid #bbb;padding:6px;font-size:11px}th{background:#eee}div{box-sizing:border-box}</style></head><body>'+
+    '<div id="neon-api-notice" style="position:fixed;bottom:8px;right:8px;z-index:9999;background:#172554;color:#bfdbfe;border:1px solid #1d4ed8;border-radius:8px;padding:7px 10px;font:11px sans-serif;max-width:310px">Banco: Neon DB • API segura necessária em /.netlify/functions/api</div>'+
     '<h2>LogiRotator — Relatório '+nomeMesAtual+' / '+anoAtual+'</h2>'+area.innerHTML+'</body></html>');
   w.document.close();
   w.focus();
@@ -1358,550 +1341,12 @@ function renderizarMatriz(){const t=normalizarTexto(document.getElementById('mat
 function fecharModalMatriz(){modoAdmin=false;atualizarBotaoModoAdmin();document.getElementById('modal-matriz').classList.add('hidden');renderizar()}
 
 // ============================================================
-// IMPORTAÇÃO DO EXCEL — v26 (Regras Shopee + Anti-duplicidade)
-// ============================================================
-
-const MAPA_STATUS_EXCEL = {
-  // Critérios Shopee: Absenteísmo AM/F/FJ; Presente PHD P/S2.
-  // Quadro fixo: P, DSR, FO, FE, AF, BH, AL, AM, F, FJ, S1, TD, SU.
-  // Aptos: P, AM, F, FJ, FO, BH, S1, TD, SU.
-  // Preserva o código original do Excel.
-  "AF":"AF", "AL":"AL", "AM":"AM", "BH":"BH", "DF":"DF", "DP":"DP", "DSR":"DSR", "DV":"DV",
-  "F":"F", "FE":"FE", "FJ":"FJ", "FO":"FO", "NC":"NC", "NS":"NS", "P":"P", "PR":"PR",
-  "S1":"S1", "S2":"S2", "TR":"TR", "TD":"TD", "SU":"SU", "FC":"FC", "IN":"IN"
-};
-
-const CRITERIOS_SHOPEE = {
-  ABSENTEISMO: ["AM","F","FJ"],
-  PRESENTE_PHD: ["P","S2"],
-  QUADRO_FIXO_CONTRATADO: ["P","DSR","FO","FE","AF","BH","AL","AM","F","FJ","S1","TD","SU"],
-  APTOS_A_TRABALHAR: ["P","AM","F","FJ","FO","BH","S1","TD","SU"]
-};
-function statusAtendeCriterioShopee(codigo, criterio){
-  return (CRITERIOS_SHOPEE[criterio]||[]).includes(String(codigo||"").trim().toUpperCase());
-}
-
+// Extrai o código operacional quando ele estiver incorporado ao nome cadastrado.
 function extrairCodigoSPX(valor){
-  // A planilha usa vários prefixos de matrícula: SPXBR, GN, GI, LD etc.
-  // Captura o código no final do nome ou em uma coluna própria.
   const s = String(valor||'').toUpperCase().trim();
   const m = s.match(/\b([A-Z]{2,8})\s*-?\s*(\d{3,})\b(?=\s*$|\b)/);
   return m ? (m[1] + m[2]).replace(/[\s-]+/g,'') : '';
 }
-
-function limparNomeExcel(nomeBruto){
-  let s = String(nomeBruto||'').trim();
-  // Remove matrícula/código anexado ao final do nome: SPXBR44266, GN44833,
-  // GI794242, LD114697 e outros prefixos alfanuméricos equivalentes.
-  s = s.replace(/\s+[A-Z]{2,8}[\s-]?\d{3,}\s*$/i, '');
-  return s.replace(/\s+/g,' ').trim();
-}
-
-// Busca segura: 1) Código SPXBR; 2) nome exato normalizado; 3) variação de nome
-// somente quando houver UM único candidato de alta confiança.
-function encontrarColaboradorExcel(nomeLimpo, codigoSPX){
-  const codigo = String(codigoSPX||'').trim().toUpperCase().replace(/[\s-]+/g,'');
-  if(codigo){
-    const porCodigo = colaboradores.filter(function(c){
-      const codBanco = String(c.codigoSPX||extrairCodigoSPX(c.nome)||'').toUpperCase().replace(/[\s-]+/g,'');
-      return codBanco && codBanco === codigo;
-    });
-    if(porCodigo.length === 1) return porCodigo[0];
-  }
-
-  const alvo = normalizarTexto(limparNomeExcel(nomeLimpo)).replace(/\s+/g,' ').trim();
-  if(!alvo) return null;
-
-  const exatos = colaboradores.filter(function(c){
-    return normalizarTexto(limparNomeExcel(c.nome)).replace(/\s+/g,' ').trim() === alvo;
-  });
-  if(exatos.length === 1) return exatos[0];
-
-  const pa = alvo.split(' ').filter(function(p){return p.length>1});
-  if(pa.length < 2) return null;
-  const candidatos = colaboradores.filter(function(c){
-    const nb = normalizarTexto(limparNomeExcel(c.nome)).replace(/\s+/g,' ').trim();
-    const pb = nb.split(' ').filter(function(p){return p.length>1});
-    if(pb.length < 2 || pa[0] !== pb[0] || pa[pa.length-1] !== pb[pb.length-1]) return false;
-    const menor = pa.length <= pb.length ? pa : pb;
-    const maior = pa.length <= pb.length ? pb : pa;
-    const comuns = menor.filter(function(p){return maior.includes(p)}).length;
-    return comuns === menor.length && comuns / Math.max(pa.length,pb.length) >= 0.75;
-  });
-  return candidatos.length === 1 ? candidatos[0] : null;
-}
-
-function normalizarChaveData(chave) {
-  if (chave instanceof Date && !isNaN(chave)) {
-    return chave.getFullYear() + '-' +
-      String(chave.getMonth()+1).padStart(2,'0') + '-' +
-      String(chave.getDate()).padStart(2,'0');
-  }
-  let m = String(chave).match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (m) return m[1] + '-' + m[2] + '-' + m[3];
-  m = String(chave).match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
-  if (m) return m[3] + '-' + m[2] + '-' + m[1];
-  return null;
-}
-
-
-function chaveSnapshotExcelHoje(){
-  return 'logirotator_excel_snapshot_' + anoAtual + '-' +
-    String(mesAtualIndex+1).padStart(2,'0') + '-' + String(diaHoje).padStart(2,'0');
-}
-
-function salvarSnapshotExcelHoje(lista){
-  localStorage.setItem(chaveSnapshotExcelHoje(), JSON.stringify({
-    data: anoAtual + '-' + String(mesAtualIndex+1).padStart(2,'0') + '-' + String(diaHoje).padStart(2,'0'),
-    registros: lista
-  }));
-}
-
-function carregarSnapshotExcelHoje(){
-  try{
-    const raw = localStorage.getItem(chaveSnapshotExcelHoje());
-    if(!raw) return null;
-    const obj = JSON.parse(raw);
-    return obj && Array.isArray(obj.registros) ? obj.registros : null;
-  }catch(e){
-    console.error('Erro ao ler snapshot Excel:', e);
-    return null;
-  }
-}
-
-function aplicarSnapshotExcelHoje(){
-  const snapshot = carregarSnapshotExcelHoje();
-  if(!snapshot || !snapshot.length) return;
-
-  const usados = new Set();
-  const listaDia = [];
-
-  snapshot.forEach(function(reg){
-    const nomeLimpo = limparNomeExcel(reg.nome);
-    const codigo = String(reg.codigo||'').toUpperCase().replace(/[\s-]+/g,'');
-    let encontrado = null;
-
-    // 1. código
-    if(codigo){
-      encontrado = colaboradores.find(function(c){
-        if(usados.has(c.id)) return false;
-        const cc = String(c.codigoSPX||extrairCodigoSPX(c.nome)||'').toUpperCase().replace(/[\s-]+/g,'');
-        return cc && cc === codigo;
-      }) || null;
-    }
-
-    // 2. nome exato normalizado
-    if(!encontrado){
-      const alvo = normalizarTexto(nomeLimpo);
-      encontrado = colaboradores.find(function(c){
-        return !usados.has(c.id) && normalizarTexto(limparNomeExcel(c.nome)) === alvo;
-      }) || null;
-    }
-
-    // 3. correspondência segura por palavras do nome
-    if(!encontrado){
-      const alvo = normalizarTexto(nomeLimpo).split(' ').filter(Boolean);
-      const candidatos = colaboradores.filter(function(c){
-        if(usados.has(c.id)) return false;
-        const b = normalizarTexto(limparNomeExcel(c.nome)).split(' ').filter(Boolean);
-        if(!alvo.length || !b.length || alvo[0] !== b[0]) return false;
-        const comuns = alvo.filter(function(p){ return b.includes(p); }).length;
-        return comuns >= Math.min(3, alvo.length) &&
-               comuns / Math.max(alvo.length,b.length) >= 0.70;
-      });
-      if(candidatos.length === 1) encontrado = candidatos[0];
-    }
-
-    if(encontrado){
-      usados.add(encontrado.id);
-      if(!Array.isArray(encontrado.historicoDias))
-        encontrado.historicoDias = new Array(totalDiasDoMes).fill('-');
-
-      // O Excel informa presença/ocorrência. Uma função/setor já alocada pelo
-      // usuário e salva no histórico tem prioridade para a Grade Mensal.
-      const jaSalvoHoje = encontrado.historicoDias[diaHoje-1] || '-';
-      if(jaSalvoHoje === '-' || isStatusEspecial(jaSalvoHoje)){
-        encontrado.historicoDias[diaHoje-1] = reg.status;
-      }
-      encontrado.codigoSPX = encontrado.codigoSPX || reg.codigo || '';
-      encontrado.origemExcelHoje = true;
-      listaDia.push(encontrado);
-    }else{
-      // Não cadastra no Supabase. Mantém somente na visão diária para que
-      // os KPIs e a lista reflitam exatamente a planilha importada.
-      const hd = new Array(totalDiasDoMes).fill('-');
-      hd[diaHoje-1] = reg.status;
-      listaDia.push({
-        id: 'excel-' + (reg.codigo || normalizarTexto(nomeLimpo).replace(/\s+/g,'-')),
-        nome: nomeLimpo,
-        codigoSPX: reg.codigo || '',
-        escala: 'Excel',
-        horario: '',
-        dsr: '',
-        historicoDias: hd,
-        origemExcelHoje: true,
-        somenteExcel: true
-      });
-    }
-  });
-
-  // O quadro diário passa a seguir o Excel: DF fica fora e colaboradores
-  // antigos que não aparecem na planilha do dia não viram "Sem informação".
-  colaboradores = listaDia.sort(function(a,b){return a.nome.localeCompare(b.nome,'pt-BR')});
-}
-
-function abrirModalResultadoImport() { document.getElementById('modal-resultado-import').classList.remove('hidden'); }
-function fecharModalResultadoImport() { document.getElementById('modal-resultado-import').classList.add('hidden'); }
-
-function renderizarResultadoImport(stats, naoEncontrados, statusDesconhecidos, dataAlvo) {
-  const cont = document.getElementById('resultado-import-conteudo');
-  let h = '';
-  
-  h += '<div class="bg-cyan-950/20 border border-cyan-500/40 rounded-xl p-3 text-center">';
-  h += '<div class="text-[11px] uppercase text-cyan-400 font-bold">📅 Data processada</div>';
-  h += '<div class="text-lg font-extrabold text-cyan-300">' + dataAlvo + '</div>';
-  h += '<div class="text-[10px] text-slate-400 mt-1">Todos os dias reconhecidos na planilha foram processados</div>';
-  h += '</div>';
-
-  h += '<div class="grid grid-cols-2 gap-2">';
-  h += '<div class="bg-emerald-950/30 border border-emerald-500/40 rounded-xl p-3"><div class="text-[10px] uppercase text-emerald-400 font-bold">Inseridos</div><div class="text-2xl font-extrabold text-emerald-300">' + stats.inseridos + '</div></div>';
-  h += '<div class="bg-cyan-950/30 border border-cyan-500/40 rounded-xl p-3"><div class="text-[10px] uppercase text-cyan-400 font-bold">Atualizados</div><div class="text-2xl font-extrabold text-cyan-300">' + stats.atualizados + '</div></div>';
-  h += '<div class="bg-slate-800/50 border border-slate-700 rounded-xl p-3"><div class="text-[10px] uppercase text-slate-400 font-bold">Ignorados</div><div class="text-2xl font-extrabold text-slate-300">' + stats.ignorados + '</div></div>';
-  h += '<div class="' + (stats.erros > 0 ? 'bg-red-950/30 border border-red-500/40' : 'bg-slate-800/50 border border-slate-700') + ' rounded-xl p-3"><div class="text-[10px] uppercase ' + (stats.erros > 0 ? 'text-red-400' : 'text-slate-400') + ' font-bold">Erros</div><div class="text-2xl font-extrabold ' + (stats.erros > 0 ? 'text-red-300' : 'text-slate-300') + '">' + stats.erros + '</div></div>';
-  h += '</div>';
-
-  if (naoEncontrados.length > 0) {
-    h += '<div class="bg-yellow-950/20 border border-yellow-500/40 rounded-xl p-3">';
-    h += '<div class="text-[11px] uppercase text-yellow-400 font-bold mb-1">⚠️ ' + naoEncontrados.length + ' nome(s) não encontrado(s) no banco</div>';
-    h += '<div class="text-[10px] text-slate-400 mb-2">Não houve correspondência segura por Código SPXBR ou nome. Nenhum cadastro foi criado automaticamente.</div>';
-    h += '<div class="max-h-32 overflow-y-auto bg-slate-950 rounded p-2 text-[10px] text-slate-300 font-mono space-y-0.5">';
-    naoEncontrados.forEach(n => { h += '<div>' + n + '</div>'; });
-    h += '</div></div>';
-  }
-
-  if (Object.keys(statusDesconhecidos).length > 0) {
-    h += '<div class="bg-orange-950/20 border border-orange-500/40 rounded-xl p-3">';
-    h += '<div class="text-[11px] uppercase text-orange-400 font-bold mb-1">⚠️ Status desconhecidos na planilha</div>';
-    h += '<div class="max-h-24 overflow-y-auto bg-slate-950 rounded p-2 text-[10px] text-slate-300 font-mono space-y-0.5">';
-    Object.keys(statusDesconhecidos).forEach(k => { h += '<div>"' + k + '" → ' + statusDesconhecidos[k] + ' ocorrência(s)</div>'; });
-    h += '</div></div>';
-  }
-
-  if (naoEncontrados.length === 0 && Object.keys(statusDesconhecidos).length === 0 && stats.erros === 0) {
-    h += '<div class="bg-emerald-950/20 border border-emerald-500/40 rounded-xl p-3 text-center text-emerald-300 text-sm font-bold">✅ Tudo certo! Nenhum erro.</div>';
-  }
-
-
-  const snap = carregarSnapshotExcelHoje() || [];
-  if(snap.length){
-    const contagem = {};
-    snap.forEach(function(x){ contagem[x.status] = (contagem[x.status]||0)+1; });
-    h += '<div class="bg-slate-950 border border-slate-700 rounded-xl p-3">';
-    h += '<div class="text-[11px] uppercase text-amber-400 font-bold mb-2">Resumo do Excel — quadro ativo</div>';
-    h += '<div class="grid grid-cols-3 gap-2 text-center">';
-    ['P','F','AM','BH','AF','FE','FJ','S2'].forEach(function(k){
-      if(contagem[k]){
-        h += '<div class="bg-slate-900 rounded-lg p-2"><div class="text-[10px] text-slate-400">'+k+'</div><div class="text-xl font-extrabold text-slate-100">'+contagem[k]+'</div></div>';
-      }
-    });
-    h += '</div><div class="mt-2 text-xs text-slate-300">Total ativo no Excel: <strong>'+snap.length+'</strong></div></div>';
-  }
-
-  cont.innerHTML = h;
-  abrirModalResultadoImport();
-}
-
-async function processarExcel(event){
-  const file=event.target.files && event.target.files[0];
-  if(!file)return;
-
-  if(!confirm(
-    'Importar a planilha de presença completa?\n\n'+
-    'Os status reconhecidos serão gravados em presenca_diaria para todos os dias encontrados.\n'+
-    'Registros existentes serão atualizados por colaborador + data.\n'+
-    'O cadastro de colaboradores e o histórico de setores não serão alterados.'
-  )){event.target.value='';return;}
-
-  const MESES={
-    'jan':1,'janeiro':1,'january':1,'fev':2,'fevereiro':2,'feb':2,'february':2,
-    'mar':3,'marco':3,'março':3,'march':3,'abr':4,'abril':4,'apr':4,'april':4,
-    'mai':5,'maio':5,'may':5,'jun':6,'junho':6,'june':6,
-    'jul':7,'julho':7,'july':7,'ago':8,'agosto':8,'aug':8,'august':8,
-    'set':9,'setembro':9,'sep':9,'september':9,'out':10,'outubro':10,'oct':10,'october':10,
-    'nov':11,'novembro':11,'november':11,'dez':12,'dezembro':12,'dec':12,'december':12
-  };
-  function contextoMes(texto){
-    const t=normalizarTexto(String(texto||'')).toLowerCase();
-    for(const [nome,mes] of Object.entries(MESES)){
-      if(new RegExp('(^|[^a-z])'+nome+'([^a-z]|$)','i').test(t)){
-        const y=t.match(/20\d{2}/);
-        return {mes:mes,ano:y?Number(y[0]):Number(anoAtual)};
-      }
-    }
-    const y=t.match(/20\d{2}/);
-    return {mes:Number(mesAtualIndex)+1,ano:y?Number(y[0]):Number(anoAtual)};
-  }
-  function montarISO(ano,mes,dia){
-    if(!ano||mes<1||mes>12||dia<1||dia>31)return null;
-    const d=new Date(Date.UTC(ano,mes-1,dia));
-    if(d.getUTCFullYear()!==ano||d.getUTCMonth()!==mes-1||d.getUTCDate()!==dia)return null;
-    return String(ano).padStart(4,'0')+'-'+String(mes).padStart(2,'0')+'-'+String(dia).padStart(2,'0');
-  }
-  function dataCabecalhoISO(valor,ctx){
-    if(valor instanceof Date && !isNaN(valor)){
-      // Datas antigas (1899/1900) podem ser apenas os números 1..31 formatados
-      // como data pelo Excel. Nesse caso, interpretamos como dia do mês ativo.
-      if(valor.getFullYear()<2000 && valor.getMonth()===0 && valor.getDate()>=1 && valor.getDate()<=31){
-        return montarISO(ctx.ano,ctx.mes,valor.getDate());
-      }
-      return montarISO(valor.getFullYear(),valor.getMonth()+1,valor.getDate());
-    }
-    if(typeof valor==='number'&&isFinite(valor)){
-      // Em planilhas operacionais, cabeçalhos 1..31 são dias do mês, não
-      // números seriais de janeiro/1900. Seriais reais normalmente são > 31.
-      if(Number.isInteger(valor)&&valor>=1&&valor<=31)return montarISO(ctx.ano,ctx.mes,valor);
-      const d=XLSX.SSF.parse_date_code(valor);
-      if(d&&d.y&&d.m&&d.d&&d.y>=2000)return montarISO(d.y,d.m,d.d);
-      return null;
-    }
-    const s=String(valor??'').trim().toLowerCase();
-    if(!s)return null;
-    let m=s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/);
-    if(m)return montarISO(+m[1],+m[2],+m[3]);
-    m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
-    if(m){let y=+m[3];if(y<100)y+=2000;return montarISO(y,+m[2],+m[1]);}
-    // Formatos como 01/11, 01-nov ou 1 nov 2026.
-    m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})$/);
-    if(m)return montarISO(ctx.ano,+m[2],+m[1]);
-    m=s.match(/^(\d{1,2})\s*[-/ ]\s*([a-zçãé]{3,})\.?\s*(20\d{2})?$/i);
-    if(m){const chave=normalizarTexto(m[2]).toLowerCase().slice(0,3);const mes=MESES[chave]||MESES[normalizarTexto(m[2]).toLowerCase()];return mes?montarISO(m[3]?+m[3]:ctx.ano,mes,+m[1]):null;}
-    // Cabeçalhos que exibem somente o dia: 1, 2, ... 31.
-    if(/^\d{1,2}$/.test(s)){const dia=+s;return dia>=1&&dia<=31?montarISO(ctx.ano,ctx.mes,dia):null;}
-    return null;
-  }
-  function normalizarCodigo(v){return String(v||'').toUpperCase().trim().replace(/[\s-]+/g,'');}
-  function nomeIgual(a,b){
-    return normalizarTexto(limparNomeExcel(a)).replace(/\s+/g,' ').trim()===
-           normalizarTexto(limparNomeExcel(b)).replace(/\s+/g,' ').trim();
-  }
-  function localizarColaborador(banco,nome,codigo){
-    // O código individual é a chave primária de associação do Excel.
-    // Não usar Station ID (ex.: 10768), pois ele pode ser compartilhado
-    // por dezenas de colaboradores e causar associações incorretas.
-    const cod=normalizarCodigo(codigo || extrairCodigoSPX(nome));
-    if(cod){
-      const candidatos=banco.filter(function(c){
-        const codigoBanco=normalizarCodigo(
-          c.codigo_spx || c.codigo || c.matricula || c.spx || extrairCodigoSPX(c.nome) || ''
-        );
-        return codigoBanco===cod;
-      });
-      if(candidatos.length===1)return {colab:candidatos[0],metodo:'codigo'};
-      if(candidatos.length>1)return {colab:null,metodo:'codigo_duplicado'};
-      // Se veio um código individual e ele não existe no banco, não associar
-      // pelo nome: isso poderia vincular a pessoa errada.
-      return {colab:null,metodo:'codigo_nao_encontrado'};
-    }
-
-    const alvo=normalizarTexto(limparNomeExcel(nome)).replace(/\s+/g,' ').trim();
-    const porNome=banco.filter(function(c){
-      return normalizarTexto(limparNomeExcel(c.nome)).replace(/\s+/g,' ').trim()===alvo;
-    });
-    if(porNome.length===1)return {colab:porNome[0],metodo:'nome'};
-    if(porNome.length>1)return {colab:null,metodo:'nome_duplicado'};
-    return {colab:null,metodo:'nao_encontrado'};
-  }
-  function normalizarStatus(valor){
-    let s=String(valor??'').toUpperCase().trim().replace(/\s+/g,' ');
-    if(!s||s==='-'||s==='—')return '';
-    if(MAPA_STATUS_EXCEL[s]!==undefined)return MAPA_STATUS_EXCEL[s];
-    // Aceita células com descrição junto do código, por exemplo "P - Presente".
-    const m=s.match(/^(AF|AL|AM|BH|DF|DP|DSR|DV|F|FE|FJ|FO|NC|NS|P|PR|S1|S2|TR|TD|SU|FC|IN)(?:\s|[-–(]|$)/);
-    if(m&&MAPA_STATUS_EXCEL[m[1]]!==undefined)return MAPA_STATUS_EXCEL[m[1]];
-    return undefined;
-  }
-
-  const reader=new FileReader();
-  reader.onload=async function(e){
-    try{
-      toast('Analisando estrutura da planilha...','ok');
-      const workbook=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
-      let escolhido=null;
-      const ctxArquivo=contextoMes((file.name||'')+' '+String(anoAtual));
-      // Avalia todas as abas e as primeiras linhas. Algumas planilhas colocam
-      // o nome numa linha e os dias na linha imediatamente abaixo.
-      for(const sheetName of workbook.SheetNames){
-        const ws=workbook.Sheets[sheetName];
-        const matriz=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
-        const ctx=contextoMes(sheetName+' '+(file.name||''));
-        for(let r=0;r<Math.min(matriz.length,100);r++){
-          const linha=matriz[r]||[];
-          let cNome=-1,cCodigo=-1,codigoScore=-1;
-          for(let c=0;c<linha.length;c++){
-            const txt=normalizarTexto(String(linha[c]??'')).trim().toLowerCase();
-            if(cNome<0&&/^(nome|nome completo|nome do colaborador(?:\s+a)?|colaborador|colaboradores|employee|funcionario)$/.test(txt))cNome=c;
-            // Usa somente identificadores individuais.
-            // Station ID é compartilhado (10768 nesta planilha) e NUNCA
-            // pode ser usado como matrícula/código do colaborador.
-            let score=-1;
-            if(/^(codigo|codigo do colaborador|codigo colaborador)$/.test(txt))score=100;
-            else if(/^(matricula|matricula do colaborador|id colaborador|employee id)$/.test(txt))score=80;
-            else if(/^(spx|codigo spx|spx code)$/.test(txt))score=70;
-            if(score>codigoScore){codigoScore=score;cCodigo=c;}
-          }
-          if(cNome<0)continue;
-          let melhorDatas=[],linhaDatas=r;
-          for(let rr=r;rr<=Math.min(r+2,matriz.length-1);rr++){
-            const l=matriz[rr]||[];const ds=[];
-            for(let c=0;c<l.length;c++){
-              const iso=dataCabecalhoISO(l[c],ctx);
-              if(iso)ds.push({col:c,iso:iso});
-            }
-            if(ds.length>melhorDatas.length){melhorDatas=ds;linhaDatas=rr;}
-          }
-          if(melhorDatas.length>0){
-            const score=melhorDatas.length+(cCodigo>=0?0.25:0);
-            if(!escolhido||score>escolhido.score){escolhido={sheetName,matriz,idxCabecalho:Math.max(r,linhaDatas),linhaNome:r,colNome:cNome,colCodigo:cCodigo,datas:melhorDatas,ctx:ctx,score:score};}
-          }
-        }
-      }
-      if(!escolhido)throw new Error('Não encontrei cabeçalho de colaborador + datas. Confira se a planilha possui uma coluna Nome e uma linha com os dias do mês.');
-      const {sheetName,matriz,idxCabecalho,linhaNome,colNome,colCodigo,datas,ctx}=escolhido;
-      if(datas.length===0)throw new Error('Nenhuma data foi reconhecida na planilha.');
-      toast('Aba '+sheetName+': '+datas.length+' datas reconhecidas. O Station ID será ignorado; será usado apenas o código individual.','ok');
-
-      const rc=await supabaseClient.from('colaboradores').select('*');
-      if(rc.error)throw new Error('Erro ao consultar colaboradores: '+rc.error.message);
-      const banco=rc.data||[];
-      if(!banco.length)throw new Error('A tabela colaboradores está vazia.');
-
-      const registrosMap=new Map(),naoEncontrados=[],ambiguos=[],statusDesconhecidos={};
-      const codigosLidos=new Set(),colaboradoresIdentificados=new Set();
-      let linhasLidas=0,vazios=0,semStatus=0;
-      const inicioDados=Math.max(linhaNome,idxCabecalho)+1;
-      for(let i=inicioDados;i<matriz.length;i++){
-        const linha=matriz[i]||[];
-        const nomeBruto=linha[colNome];
-        if(!String(nomeBruto??'').trim())continue;
-        const nomeLimpo=limparNomeExcel(nomeBruto);
-        // Ignora linhas de totais, legendas e rodapés.
-        if(/^(total|subtotal|legenda|observa[cç][aã]o|observa[cç][oõ]es)$/i.test(nomeLimpo))continue;
-        linhasLidas++;
-        // A coluna Código contém a matrícula individual (ex.: SPXBR44266).
-        // Se ela não existir, extrai o código do final do nome. Nunca lê Station ID.
-        const codigo=normalizarCodigo(colCodigo>=0?linha[colCodigo]:extrairCodigoSPX(nomeBruto));
-        if(codigo){
-          if(codigosLidos.has(codigo)){
-            ambiguos.push(nomeLimpo+' ('+codigo+') — código repetido na planilha');
-            continue;
-          }
-          codigosLidos.add(codigo);
-        }
-        const encontrado=localizarColaborador(banco,nomeLimpo,codigo);
-        if(!encontrado.colab){
-          const desc=nomeLimpo+(codigo?' ('+codigo+')':'');
-          if(encontrado.metodo==='codigo_duplicado'||encontrado.metodo==='nome_duplicado')ambiguos.push(desc);else naoEncontrados.push(desc);
-          continue;
-        }
-        colaboradoresIdentificados.add(encontrado.colab.id);
-        for(const d of datas){
-          const bruto=linha[d.col];
-          if(bruto===null||bruto===undefined||String(bruto).trim()===''){vazios++;continue;}
-          const status=normalizarStatus(bruto);
-          if(status===''){semStatus++;continue;}
-          if(status===undefined){const chave=String(bruto).trim().toUpperCase();statusDesconhecidos[chave]=(statusDesconhecidos[chave]||0)+1;continue;}
-          registrosMap.set(encontrado.colab.id+'|'+d.iso,{colaborador_id:encontrado.colab.id,data:d.iso,status:status});
-        }
-      }
-      // Pré-validação: não grava parcialmente se qualquer colaborador/código
-      // estiver ausente, duplicado ou se houver status não reconhecido.
-      if(naoEncontrados.length||ambiguos.length){
-        const detalhes=naoEncontrados.concat(ambiguos).slice(0,12).join('\n');
-        throw new Error('Importação cancelada antes de gravar: '+naoEncontrados.length+' não encontrados e '+ambiguos.length+' ambiguidades.\n\n'+detalhes);
-      }
-      if(Object.keys(statusDesconhecidos).length){
-        const detalhes=Object.entries(statusDesconhecidos).slice(0,10).map(([k,v])=>k+' ('+v+')').join(', ');
-        throw new Error('Importação cancelada: existem status não reconhecidos: '+detalhes);
-      }
-      const registros=Array.from(registrosMap.values());
-      if(!registros.length){
-        const amostra=Object.keys(statusDesconhecidos).slice(0,8).join(', ')||'nenhum status preenchido';
-        throw new Error('Nenhum registro válido foi montado. Aba: '+sheetName+'; datas: '+datas.length+'; linhas de colaboradores: '+linhasLidas+'; valores não reconhecidos: '+amostra+'.');
-      }
-
-      console.log('PRÉ-VALIDAÇÃO DA IMPORTAÇÃO',{
-        aba:sheetName,
-        colunaNome:colNome+1,
-        colunaCodigoIndividual:colCodigo>=0?colCodigo+1:'código extraído do nome',
-        stationIdIgnorado:true,
-        linhasLidas:linhasLidas,
-        colaboradoresIdentificados:colaboradoresIdentificados.size,
-        codigosIndividuais:codigosLidos.size,
-        datasReconhecidas:datas.length,
-        registrosComStatus:registros.length,
-        status:Object.fromEntries(registros.reduce((m,r)=>m.set(r.status,(m.get(r.status)||0)+1),new Map()))
-      });
-
-      // Primeiro tenta UPSERT em lote. Se a tabela não possuir UNIQUE em
-      // (colaborador_id,data), usa atualização/inserção individual como fallback.
-      let gravados=0,modoGravacao='upsert';
-      const lote=400;
-      let erroUpsert=null;
-      for(let i=0;i<registros.length;i+=lote){
-        const r=await supabaseClient.from('presenca_diaria').upsert(registros.slice(i,i+lote),{onConflict:'colaborador_id,data'});
-        if(r.error){erroUpsert=r.error;break;}
-        gravados+=Math.min(lote,registros.length-i);
-      }
-      if(erroUpsert){
-        const msg=String(erroUpsert.message||'');
-        if(/no unique|unique constraint|on conflict|exclusion constraint|there is no unique/i.test(msg)){
-          modoGravacao='fallback update/insert';gravados=0;
-          for(let i=0;i<registros.length;i+=20){
-            const grupo=registros.slice(i,i+20);
-            const resultados=await Promise.all(grupo.map(async function(reg){
-              const q=await supabaseClient.from('presenca_diaria').select('id').eq('colaborador_id',reg.colaborador_id).eq('data',reg.data).limit(1);
-              if(q.error)throw q.error;
-              if(q.data&&q.data.length){const u=await supabaseClient.from('presenca_diaria').update({status:reg.status}).eq('id',q.data[0].id);if(u.error)throw u.error;}
-              else{const ins=await supabaseClient.from('presenca_diaria').insert([reg]);if(ins.error)throw ins.error;}
-              return 1;
-            }));
-            gravados+=resultados.reduce((a,b)=>a+b,0);
-          }
-        }else{
-          throw new Error('Falha ao gravar presenca_diaria: '+msg);
-        }
-      }
-
-      // Confirma a persistência consultando as datas efetivamente importadas.
-      const datasImportadas=Array.from(new Set(registros.map(r=>r.data))).sort();
-      let confirmados=0;
-      for(let i=0;i<datasImportadas.length;i+=20){
-        const ds=datasImportadas.slice(i,i+20);
-        const q=await supabaseClient.from('presenca_diaria').select('colaborador_id,data,status').in('data',ds);
-        if(q.error)throw new Error('A gravação foi enviada, mas a conferência falhou: '+q.error.message);
-        confirmados+=(q.data||[]).filter(x=>registrosMap.has(String(x.colaborador_id)+'|'+String(x.data).slice(0,10))).length;
-      }
-      if(confirmados===0)throw new Error('O Supabase não retornou nenhum registro na conferência após a gravação. Verifique as permissões de INSERT/UPDATE e a política RLS de presenca_diaria.');
-
-      await carregarDadosSupabase();
-      atualizarKPIs();
-      renderizar();
-      const contagem={};registros.forEach(r=>contagem[r.status]=(contagem[r.status]||0)+1);
-      const resumo=Object.entries(contagem).sort().map(x=>x[0]+': '+x[1]).join(' | ');
-      const stats={inseridos:confirmados,atualizados:0,ignorados:vazios+semStatus,erros:0,semData:0,linhas:linhasLidas,datas:datasImportadas.length};
-      renderizarResultadoImport(stats,naoEncontrados.concat(ambiguos),statusDesconhecidos,datasImportadas.length+' dia(s)');
-      toast('Presença confirmada no banco: '+confirmados+' registros em '+datasImportadas.length+' dia(s). '+resumo,'ok');
-      console.log('IMPORTAÇÃO CONFIRMADA',{aba:sheetName,modo:modoGravacao,total:confirmados,linhas:linhasLidas,colaboradores:colaboradoresIdentificados.size,codigos:codigosLidos.size,datas:datasImportadas,naoEncontrados,ambiguos,status:contagem});
-    }catch(err){
-      console.error('ERRO IMPORTAÇÃO:',err);
-      toast('Falha na importação: '+(err.message||err),'erro');
-      alert('Falha ao alimentar presenca_diaria:\n\n'+(err.message||err));
-    }finally{event.target.value='';}
-  };
-  reader.onerror=function(){toast('Não foi possível ler o arquivo selecionado.','erro');event.target.value='';};
-  reader.readAsArrayBuffer(file);
-}
-
 
 function mostrarLogin(msg){
  document.body.classList.remove('role-user','role-admin');
